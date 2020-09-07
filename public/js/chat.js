@@ -9,23 +9,57 @@ const $location = document.querySelector('#location');
 
 const messageTemplate = document.querySelector('#message-template').innerHTML;
 const locationTemplate = document.querySelector('#location-template').innerHTML;
+const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML;
+
+const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
+
+const autoscroll = () => {
+  const $newMessage = $messages.lastElementChild;
+
+  const $newMessageStyles = getComputedStyle($newMessage);
+  const newMessageMargin = parseInt($newMessageStyles.marginBottom);
+  const newMessageHeight = $newMessage.offsetHeight + newMessageMargin;
+
+  const visibleHeight = $messages.offsetHeight;
+
+  const containerHeight = $messages.scrollHeight;
+
+  const scrollOffset = $messages.scrollTop + visibleHeight;
+
+  if (containerHeight - newMessageHeight <= scrollOffset) {
+    $messages.scrollTop = $messages.scrollHeight;
+  }
+
+}
 
 socket.on('message', (message) => {
   console.log(message);
   const html = Mustache.render(messageTemplate, {
+    username: message.username,
     message: message.text,
     createdAt: moment(message.createdAt).format('h:mm:ss a')
   });
   $messages.insertAdjacentHTML('beforeend', html);
+  autoscroll()
 });
+
+socket.on('roomData', ({ room, users }) => {
+  const html = Mustache.render(sidebarTemplate, {
+    room,
+    users
+  })
+  document.querySelector('#sidebar').innerHTML = html;
+})
 
 socket.on('locationMessage', (message) => {
   console.log(message);
   const location = Mustache.render(locationTemplate, {
+    username: message.username,
     message: message.url,
     createdAt: moment(message.createdAt).format('h:mm:ss a')
   });
   $messages.insertAdjacentHTML('beforeend', location);
+  autoscroll();
 })
 
 $messageForm.addEventListener('submit', (e) => {
@@ -64,4 +98,11 @@ $sendLocationButton.addEventListener('click', () => {
       console.log('Location shared');
     });
   })
+});
+
+socket.emit('join', { username, room }, (error) => {
+  if (error) {
+    alert(error);
+    location.href = '/'
+  }
 })
