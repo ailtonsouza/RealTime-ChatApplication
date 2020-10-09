@@ -6,7 +6,7 @@ Projeto criado como parte do curso The Complete Node.js Developer Course (3rd Ed
 
 1.Node.js
 
-2.socket.io
+2.Socket.io
 
-3.express
+3.Express
 
